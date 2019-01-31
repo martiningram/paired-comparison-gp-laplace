@@ -30,24 +30,13 @@ def to_minimise(theta):
 
     theta = theta[0]
 
-    # lscales = theta[:n_kerns]
-    # sds = theta[n_kerns:]
+    kernels = list()
 
-    # print(lscales)
-    # print(sds)
-
-    # kernels = list()
-
-    # for cur_l, cur_sd in zip(lscales, sds):
-
-    #     kernels.append(MaternKernel12(np.array([cur_l]), cur_sd))
-
-    # kernels.append(MLPKernel(np.array([lscales[0]]), sds[0]))
-    # kernels.append(MaternKernel32(np.array([lscales[1]]), sds[1]))
-
-    # kernel = SummedKernel(kernels)
     print(theta)
-    kernel = MLPKernel(np.array([theta[0]]), theta[1], theta[2])
+    kernels.append(MLPKernel(np.array([theta[0]]), theta[1], theta[2]))
+    kernels.append(MLPKernel(np.array([theta[3]]), theta[4], theta[5]))
+    kernel = SummedKernel(kernels)
+
     predictor = GPPredictor(kernel)
     predictor.fit(winners, losers, days_since_start)
 
@@ -60,8 +49,7 @@ def to_minimise(theta):
 
 bounds = [{'name': 'l1', 'type': 'continuous', 'domain': (0.1, 10.)},
           {'name': 'l2', 'type': 'continuous', 'domain': (0.1, 10.)},
-          {'name': 'sd1', 'type': 'continuous', 'domain': (0.01, 3.)},
-          {'name': 'sd2', 'type': 'continuous', 'domain': (0.01, 3.)}]
+          {'name': 'sd1', 'type': 'continuous', 'domain': (0.01, 2.)}] * 2
 
 max_iter = 100
 

@@ -10,7 +10,7 @@ from tdata.datasets.oncourt_dataset import OnCourtDataset
 dataset = OnCourtDataset()
 df = dataset.get_stats_df()
 
-one_year = df[df['year'] >= 2016]
+one_year = df[df['year'] >= 2012]
 one_year = one_year[one_year['year'] < 2018]
 
 # Prepare the inputs
@@ -21,8 +21,7 @@ days_since_start = (one_year['start_date'] -
 
 n_matches = winners.shape[0]
 
-lscales = np.array([14., 180., 720.]) / np.std(
-    days_since_start)
+lscales = np.array([14., 180., 720.]) / 300.
 sds = np.array([0.1, 0.1, 0.1])
 
 n_kerns = len(lscales)

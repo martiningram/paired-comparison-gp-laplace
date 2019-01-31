@@ -15,6 +15,7 @@ class GPPredictor(object):
 
         self.kernel = kernel
         self.divide_by = 300.
+        self.prediction_cache = {}
 
     def fit(self, winners, losers, days_since_start):
 
@@ -147,6 +148,7 @@ class GPPredictor(object):
         print(cur_val)
 
         self.f_hat = f
+        self.mode_chol = cur_chol
 
     def make_sparse_big_kernel(self):
 
@@ -174,6 +176,8 @@ class GPPredictor(object):
 
     def calculate_log_marg_lik(self):
 
+        # TODO: I think I could just use the stored cholesky here...?
+
         big_inv_kern = self.make_sparse_inverse_kernel()
         sparse_hess = self.sparse_log_lik_hessian(self.f_hat)
 
@@ -186,6 +190,12 @@ class GPPredictor(object):
         return log_marg_lik
 
     def predict(self, player, days_since_start):
+
+        if 'big_inv_kern' in self.prediction_cache:
+            big_inv_kern = self.prediction_cache['big_inv_kern']
+        else:
+            big_inv_kern = self.make_sparse_inverse_kernel()
+            self.prediction_cache['big_inv_kern'] = big_inv_kern
 
         x_star = np.array([days_since_start])
         x_star = x_star / self.divide_by
@@ -207,16 +217,13 @@ class GPPredictor(object):
             masked_kern[to_keep, :] = all_kern[to_keep, :]
 
         masked_kern = masked_kern.squeeze()
-
-        big_inv_kern = self.make_sparse_inverse_kernel()
         pred_mean = np.matmul(masked_kern, (big_inv_kern * self.f_hat))
 
         k_star_star = self.kernel.calculate(x_star, x_star)
         inv_times_k_star = big_inv_kern @ masked_kern
         inv_term = masked_kern @ inv_times_k_star
 
-        neg_post = -self.posterior_hessian(self.f_hat)
-        neg_post_chol = cholesky(neg_post)
+        neg_post_chol = self.mode_chol
 
         solved_second_part = neg_post_chol.solve_A(inv_times_k_star)
         full_last_term = inv_times_k_star.T @ solved_second_part
