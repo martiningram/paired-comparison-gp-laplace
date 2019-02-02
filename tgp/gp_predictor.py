@@ -17,23 +17,28 @@ class GPPredictor(object):
         self.divide_by = 300.
         self.prediction_cache = {}
 
-    def fit(self, winners, losers, days_since_start):
+    def fit(self, winners, losers, days_since_start, covariates=None):
 
         assert(is_sorted(days_since_start))
 
-        self.encoder, self.s, self.e, self.w, self.l, self.X = prepare_vectors(
-            winners, losers, days_since_start)
+        self.encoder, self.s, self.e, self.w, self.l, self.X, cov_array = \
+            prepare_vectors(winners, losers, days_since_start,
+                            covariates=covariates)
 
         self.n_matches = self.w.shape[0] * 2
 
-        self.prepare_x()
+        self.prepare_x(cov_array)
 
         self.find_posterior_mode()
 
-    def prepare_x(self):
+    def prepare_x(self, covariates=None):
 
         X_scaled = self.X / self.divide_by
         X_scaled = X_scaled[:, None]
+
+        if covariates is not None:
+            X_scaled = np.concatenate([X_scaled, covariates], axis=1)
+
         self.X = X_scaled
 
     def calculate_prior(self, f):

@@ -6,6 +6,7 @@ class BiasKernel(Kernel):
 
     def __init__(self, sd):
 
+        super(BiasKernel, self).__init__(active_dims=None)
         self.sd = sd
 
     def calculate(self, X1, X2):

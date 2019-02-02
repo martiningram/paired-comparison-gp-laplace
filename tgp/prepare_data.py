@@ -2,7 +2,7 @@ import autograd.numpy as np
 from sklearn.preprocessing import LabelEncoder
 
 
-def prepare_vectors(winners, losers, days_since_start):
+def prepare_vectors(winners, losers, days_since_start, covariates=None):
 
     encoder = LabelEncoder()
     encoder.fit(winners.tolist() + losers.tolist())
@@ -21,6 +21,11 @@ def prepare_vectors(winners, losers, days_since_start):
 
     # Features (days since)
     X = np.zeros(2*n_matches)
+
+    if covariates is not None:
+        cov_array = np.zeros((2*n_matches, covariates.shape[1]))
+    else:
+        cov_array = None
 
     matches_seen = 0
 
@@ -45,8 +50,13 @@ def prepare_vectors(winners, losers, days_since_start):
             else:
                 l[cur_index] = s[i] + j
 
-        X[s[i]:e[i]] = relevant_days
+        if covariates is not None:
+            relevant_covs = covariates[relevant]
+            cov_array[s[i]:e[i], :] = relevant_covs
+        else:
+            relevant_covs = None
 
+        X[s[i]:e[i]] = relevant_days
         matches_seen = e[i]
 
-    return encoder, s, e, w, l, X
+    return encoder, s, e, w, l, X, cov_array

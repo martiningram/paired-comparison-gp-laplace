@@ -2,11 +2,11 @@ import numpy as np
 from tgp.kernel import Kernel
 
 
-class SummedKernel(Kernel):
+class MultipliedKernel(Kernel):
 
     def __init__(self, kernels):
 
-        super(SummedKernel, self).__init__(active_dims=None)
+        super(MultipliedKernel, self).__init__(active_dims=None)
 
         assert(len(kernels) > 0)
 
@@ -14,10 +14,10 @@ class SummedKernel(Kernel):
 
     def calculate(self, X1, X2):
 
-        result = np.zeros((X1.shape[0], X2.shape[0]))
+        result = np.ones((X1.shape[0], X2.shape[0]))
 
         for cur_kernel in self.kernels:
 
-            result += cur_kernel.calculate(X1, X2)
+            result *= cur_kernel.calculate(X1, X2)
 
         return result
