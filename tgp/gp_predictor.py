@@ -7,15 +7,26 @@ from tgp.prepare_data import prepare_vectors
 from ml_tools.autograd import multivariate_normal_logpdf
 from sksparse.cholmod import cholesky
 from python_tools.utils import is_sorted
+from tgp.kernel import Kernel
+from typing import Tuple, Union, Optional
+from autograd.scipy.misc import logsumexp
 
 
 class GPPredictor(object):
 
-    def __init__(self, kernel):
+    def __init__(self, kernel : Kernel) -> None:
 
-        self.kernel = kernel
-        self.divide_by = 300.
-        self.prediction_cache = {}
+        self.kernel : Kernel = kernel
+        self.divide_by : float = 300.
+
+        # Need to use Any here because of the lack of scipy support
+        self.cached_big_inv : Union[None, Any] = None
+        self.likelihood_fun = GPPredictor.logit_log_lik
+
+    @staticmethod
+    def logit_log_lik(f_i, f_j):
+
+        return -np.log1p(np.exp(-(f_i - f_j)))
 
     def fit(self, winners, losers, days_since_start, covariates=None):
 
@@ -59,8 +70,7 @@ class GPPredictor(object):
 
     def calculate_likelihood(self, f):
 
-        latents = f[self.w] - f[self.l]
-        log_likelihood = np.sum(norm.logcdf(latents))
+        log_likelihood = np.sum(self.likelihood_fun(f[self.w], f[self.l]))
 
         return log_likelihood
 
@@ -71,7 +81,7 @@ class GPPredictor(object):
         return cur_prior + cur_likelihood
 
     @staticmethod
-    def log_lik_term(fi, fj):
+    def probit_log_lik(fi, fj):
 
         return norm.logcdf(fi - fj)
 
@@ -81,13 +91,13 @@ class GPPredictor(object):
         big_hess = dok_matrix((f_shape, f_shape))
 
         grad_win_win = elementwise_grad(
-            elementwise_grad(GPPredictor.log_lik_term, 0), 0)
+            elementwise_grad(self.likelihood_fun, 0), 0)
         grad_lose_lose = elementwise_grad(
-            elementwise_grad(GPPredictor.log_lik_term, 1), 1)
+            elementwise_grad(self.likelihood_fun, 1), 1)
         big_hess[self.w, self.w] = grad_win_win(f[self.w], f[self.l])
         big_hess[self.l, self.l] = grad_lose_lose(f[self.w], f[self.l])
         grad_win_lose = elementwise_grad(
-            elementwise_grad(GPPredictor.log_lik_term, 0), 1)
+            elementwise_grad(self.likelihood_fun, 0), 1)
         big_hess[self.w, self.l] = grad_win_lose(f[self.w], f[self.l])
         big_hess[self.l, self.w] = grad_win_lose(f[self.w], f[self.l])
 
@@ -194,17 +204,23 @@ class GPPredictor(object):
 
         return log_marg_lik
 
-    def predict(self, player, days_since_start):
+    def predict(self, player : str,
+                days_since_start : int,
+                covariates : Optional[np.ndarray] = None) -> Tuple[
+                    float, float]:
 
-        if 'big_inv_kern' in self.prediction_cache:
-            big_inv_kern = self.prediction_cache['big_inv_kern']
+        if self.cached_big_inv is not None:
+            big_inv_kern = self.cached_big_inv
         else:
             big_inv_kern = self.make_sparse_inverse_kernel()
-            self.prediction_cache['big_inv_kern'] = big_inv_kern
+            self.cached_big_inv = big_inv_kern
 
         x_star = np.array([days_since_start])
         x_star = x_star / self.divide_by
         x_star = x_star.reshape(-1, 1)
+
+        if covariates is not None:
+            x_star = np.concatenate([x_star, covariates], axis=1)
 
         all_kern = self.kernel.calculate(self.X, x_star)
         masked_kern = np.zeros_like(all_kern)

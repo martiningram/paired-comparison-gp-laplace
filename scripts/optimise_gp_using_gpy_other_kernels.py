@@ -4,8 +4,8 @@ import pickle as pkl
 from tgp.gp_predictor import GPPredictor
 from tgp.summed_kernel import SummedKernel
 # from tgp.rbf_kernel import RBFKernel
-from tgp.matern_kernels import MaternKernel32
-from tgp.brownian_kernel import BrownianKernel
+from tgp.matern_kernels import MaternKernel32, MaternKernel12
+# from tgp.brownian_kernel import BrownianKernel
 from tdata.datasets.oncourt_dataset import OnCourtDataset
 
 
@@ -24,26 +24,25 @@ days_since_start = (one_year['start_date'] -
 
 n_matches = winners.shape[0]
 
-n_kerns = 3
+n_kerns = 2
 
 
 def to_minimise(theta):
 
     theta = theta[0]
 
-    lscales = theta[:n_kerns-1]
-    sds = theta[n_kerns-1:]
+    lscales = theta[:n_kerns]
+    sds = theta[n_kerns:]
 
     print(lscales)
     print(sds)
 
     kernels = list()
 
-    kernels.append(BrownianKernel(sds[0]))
+    # kernels.append(BrownianKernel(sds[0]))
 
-    for cur_l, cur_sd in zip(lscales, sds[1:]):
-
-        kernels.append(MaternKernel32(np.array([cur_l]), cur_sd))
+    kernels.append(MaternKernel12(np.array([lscales[0]]), sds[0]))
+    kernels.append(MaternKernel32(np.array([lscales[1]]), sds[1]))
 
     kernel = SummedKernel(kernels)
     predictor = GPPredictor(kernel)
@@ -56,19 +55,16 @@ def to_minimise(theta):
     return neg_marg_lik
 
 
-bounds = [  # {'name': 'l1', 'type': 'continuous', 'domain': (0.1, 1.)},
-          {'name': 'l2', 'type': 'continuous', 'domain': (0.01, 1.)},
-          {'name': 'l3', 'type': 'continuous', 'domain': (1., 3.)},
-          {'name': 'sd1', 'type': 'continuous', 'domain': (0.01, 3.)},
-          {'name': 'sd2', 'type': 'continuous', 'domain': (0.01, 3.)},
-          {'name': 'sd3', 'type': 'continuous', 'domain': (0.01, 3.)}]
+bounds = [{'name': 'l1', 'type': 'continuous', 'domain': (0.1, 10.)},
+          {'name': 'l2', 'type': 'continuous', 'domain': (0.1, 10.)},
+          {'name': 'sd1', 'type': 'continuous', 'domain': (0.01, 2.)},
+          {'name': 'sd2', 'type': 'continuous', 'domain': (0.01, 2.)}]
 
 max_iter = 100
 
 # result = minimize(to_minimise, theta_init, tol=1)
-problem = GPyOpt.methods.BayesianOptimization(
-    to_minimise, bounds, model_type='GP_MCMC', acquisition_type='EI_MCMC')
+problem = GPyOpt.methods.BayesianOptimization(to_minimise, bounds)
 result = problem.run_optimization(max_iter)
 
 pkl.dump({'best_x': problem.x_opt, 'best_y': problem.fx_opt, 'data': one_year},
-         open('gpyopt_results.pkl', 'wb'))
+         open('gpyopt_results_logit.pkl', 'wb'))
