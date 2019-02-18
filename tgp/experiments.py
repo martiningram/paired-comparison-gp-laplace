@@ -21,7 +21,10 @@ def get_dataset():
 
     exec_dir = Path(os.path.abspath(__file__)).parents[1]
     csv_path = os.path.join(str(exec_dir), 'data', 'tennis_data.csv')
-    return pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path)
+    df['start_date'] = pd.to_datetime(df['start_date'])
+
+    return df
 
 
 def get_experiment_data(start_date, end_date, add_surface=False):

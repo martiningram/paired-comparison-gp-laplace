@@ -4,23 +4,38 @@ from scipy.sparse import dok_matrix, block_diag
 from autograd import elementwise_grad, jacobian
 from autograd.scipy.stats import norm
 from tgp.prepare_data import prepare_vectors
-from ml_tools.autograd import multivariate_normal_logpdf
 from sksparse.cholmod import cholesky
-from python_tools.utils import is_sorted
 from tgp.kernel import Kernel
-from typing import Tuple, Union, Optional
 from autograd.scipy.misc import logsumexp
+
+
+def is_sorted(l):
+
+    return all(l[i] <= l[i+1] for i in range(len(l)-1))
+
+
+def multivariate_normal_logpdf(x, cov):
+
+    sign, logdet = np.linalg.slogdet(np.pi * 2 * cov)
+    logdet = sign * logdet
+    det_term = -0.5 * logdet
+
+    # TODO: Could be improved by using some kind of Cholesky here rather than
+    # inverse -- or even a solve.
+    total_prior = det_term - 0.5 * x @ np.linalg.inv(cov) @ x
+
+    return total_prior
 
 
 class GPPredictor(object):
 
-    def __init__(self, kernel : Kernel) -> None:
+    def __init__(self, kernel):
 
-        self.kernel : Kernel = kernel
-        self.divide_by : float = 300.
+        self.kernel = kernel
+        self.divide_by = 300.
 
         # Need to use Any here because of the lack of scipy support
-        self.cached_big_inv : Union[None, Any] = None
+        self.cached_big_inv = None
         self.likelihood_fun = GPPredictor.logit_log_lik
 
     @staticmethod
@@ -204,10 +219,7 @@ class GPPredictor(object):
 
         return log_marg_lik
 
-    def predict(self, player : str,
-                days_since_start : int,
-                covariates : Optional[np.ndarray] = None) -> Tuple[
-                    float, float]:
+    def predict(self, player, days_since_start, covariates=None):
 
         if self.cached_big_inv is not None:
             big_inv_kern = self.cached_big_inv
