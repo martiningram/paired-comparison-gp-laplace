@@ -31,6 +31,8 @@ class GPPredictor(object):
 
     def __init__(self, kernel):
 
+        self.is_fit = False
+
         self.kernel = kernel
         self.divide_by = 300.
 
@@ -46,6 +48,7 @@ class GPPredictor(object):
     def fit(self, winners, losers, days_since_start, covariates=None):
 
         assert(is_sorted(days_since_start))
+        assert not self.is_fit, 'GP Predictor should only be fit once!'
 
         self.encoder, self.s, self.e, self.w, self.l, self.X, cov_array = \
             prepare_vectors(winners, losers, days_since_start,
@@ -54,8 +57,9 @@ class GPPredictor(object):
         self.n_matches = self.w.shape[0] * 2
 
         self.prepare_x(cov_array)
-
         self.find_posterior_mode()
+
+        self.is_fit = True
 
     def prepare_x(self, covariates=None):
 
@@ -175,8 +179,6 @@ class GPPredictor(object):
 
             f = new_f
 
-        print(cur_val)
-
         self.f_hat = f
         self.mode_chol = cur_chol
 
@@ -205,6 +207,9 @@ class GPPredictor(object):
         return sps.block_diag(all_kerns)
 
     def calculate_log_marg_lik(self):
+
+        assert self.is_fit, ('GP Predictor must be fit before calculating '
+                             'marginal log likelihood!')
 
         # TODO: I think I could just use the stored cholesky here...?
 
