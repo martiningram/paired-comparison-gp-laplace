@@ -46,3 +46,5 @@ The easiest way to get started is to view the demos in the `jupyter` folder.
 * `Surface demo.ipynb` fits a Matern 3/2 kernel on time multiplied with an ARD
   RBF kernel on surface, shows the latent functions, and has a prediction
   example, too.
+* `Bayesian optimisation demo.ipynb` shows an example of how to run Bayesian
+  Optimisation to maximise the log marginal likelihood on the Matern 3/2 kernel.
