@@ -1,5 +1,5 @@
 from tgp.kernel import Kernel
-from ml_tools.kernels import brownian_kernel_1d
+from tgp.kernel_functions import brownian_kernel_1d
 
 
 class BrownianKernel(Kernel):

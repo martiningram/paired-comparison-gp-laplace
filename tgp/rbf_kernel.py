@@ -1,5 +1,5 @@
 from tgp.kernel import Kernel
-from ml_tools.kernels import ard_rbf_kernel_efficient
+from tgp.kernel_functions import ard_rbf_kernel_efficient
 
 
 class RBFKernel(Kernel):

@@ -1,5 +1,5 @@
 from tgp.kernel import Kernel
-from ml_tools.kernels import mlp_kernel
+from tgp.kernel_functions import mlp_kernel
 
 
 class MLPKernel(Kernel):

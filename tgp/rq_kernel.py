@@ -1,5 +1,5 @@
 from tgp.kernel import Kernel
-from ml_tools.kernels import rq_kernel
+from tgp.kernel_functions import rq_kernel
 
 
 class RationalQuadraticKernel(Kernel):

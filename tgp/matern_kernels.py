@@ -1,5 +1,5 @@
 from tgp.kernel import Kernel
-from ml_tools.kernels import matern_kernel_32, matern_kernel_12
+from tgp.kernel_functions import matern_kernel_32, matern_kernel_12
 
 
 class MaternKernel32(Kernel):
