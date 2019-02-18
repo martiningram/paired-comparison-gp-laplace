@@ -1,10 +1,12 @@
+import os
 import numpy as np
+import pandas as pd
+from pathlib import Path
 import GPyOpt
 from datetime import datetime
 from tgp.summed_kernel import SummedKernel
 from tgp.rbf_kernel import RBFKernel
 from tgp.gp_predictor import GPPredictor
-from tdata.datasets.oncourt_dataset import OnCourtDataset
 from tgp.multiplied_kernel import MultipliedKernel
 from tgp.matern_kernels import MaternKernel32, MaternKernel12
 from collections import namedtuple
@@ -17,10 +19,9 @@ ExperimentVars = namedtuple('ExperimentVars',
 
 def get_dataset():
 
-    dataset = OnCourtDataset()
-    df = dataset.get_stats_df()
-
-    return df
+    exec_dir = Path(os.path.abspath(__file__)).parents[1]
+    csv_path = os.path.join(str(exec_dir), 'data', 'tennis_data.csv')
+    return pd.read_csv(csv_path)
 
 
 def get_experiment_data(start_date, end_date, add_surface=False):
