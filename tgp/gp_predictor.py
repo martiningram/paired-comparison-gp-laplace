@@ -30,6 +30,12 @@ def multivariate_normal_logpdf(x, cov):
 class GPPredictor(object):
 
     def __init__(self, kernel):
+        """
+        Instantiates a new GPPredictor.
+
+        Args:
+            kernel (Kernel): The kernel to use.
+        """
 
         self.is_fit = False
 
@@ -46,6 +52,26 @@ class GPPredictor(object):
         return -np.log1p(np.exp(-(f_i - f_j)))
 
     def fit(self, winners, losers, days_since_start, covariates=None):
+        """
+        Fits the GPPredictor.
+
+        Args:
+            winners (np.array): A numpy array of shape [N,] containing the
+                winning players, where N is the number of matches.
+            losers (np.array): A numpy array containing the losing players in
+                the same shape as winners.
+            days_since_start (np.array): A numpy array containing the days
+                since the first match in the dataset, again in the same
+                shape as the losers array.
+            covariates (Optional[np.array]): If provided, additional covariates
+                used to predict. These should be in shape [N, Nc], where N is
+                the number of matches as above and Nc is the number of
+                covariates.
+
+        Returns:
+            Nothing, but fits the GPPredictor, which can then be used to
+            predict.
+        """
 
         assert(is_sorted(days_since_start))
         assert not self.is_fit, 'GP Predictor should only be fit once!'
@@ -207,6 +233,13 @@ class GPPredictor(object):
         return sps.block_diag(all_kerns)
 
     def calculate_log_marg_lik(self):
+        """
+        Calculates the log marginal likelihood.
+
+        Returns:
+            float: The log marginal likelihood of the data given the
+            hyperparameters.
+        """
 
         assert self.is_fit, ('GP Predictor must be fit before calculating '
                              'marginal log likelihood!')
@@ -225,6 +258,25 @@ class GPPredictor(object):
         return log_marg_lik
 
     def predict(self, player, days_since_start, covariates=None):
+        """
+        Predicts a player's skill on a day.
+
+        Args:
+            player (str): The player to predict.
+            days_since_start (int): The day to predict, in days since the
+                first match in the dataset used to fit the predictor.
+            covariates (Optional[np.array]): If the predictor was fit with
+                covariates, please provide the covariates to use for prediction
+                here. This should be a row vector, i.e. [1, Nc], where Nc
+                is the number of covariates.
+
+        Returns:
+            Tuple[float, float]: Tuple of mean and standard deviation predicted
+            for the day given.
+        """
+
+        assert self.is_fit, ('GP Predictor must be fit before prediction is '
+                             'possible!')
 
         if self.cached_big_inv is not None:
             big_inv_kern = self.cached_big_inv
