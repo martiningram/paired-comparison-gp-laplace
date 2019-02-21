@@ -1,7 +1,9 @@
 # Dynamic paired comparison modelling with Gaussian Processes
 
 This repository contains code to fit dynamic paired comparison models using
-Gaussian Process priors.
+Gaussian Process priors, as described in this preprint:
+
+[Gaussian Process Priors for Dynamic Paired Comparison Modelling](https://arxiv.org/abs/1902.07378)
 
 ## Requirements
 
@@ -48,3 +50,11 @@ The easiest way to get started is to view the demos in the `jupyter` folder.
   example, too.
 * `Bayesian optimisation demo.ipynb` shows an example of how to run Bayesian
   Optimisation to maximise the log marginal likelihood on the Matern 3/2 kernel.
+
+## Citing
+
+If you would like to use this code in your academic work, please cite the paper
+below:
+
+* Martin Ingram: "Gaussian Process Priors for Dynamic Paired Comparison
+  Modelling", 2019; [URL](http://arxiv.org/abs/1902.07378)
